@@ -13,6 +13,20 @@ later.
 - If the developer says to pause flagging for a task, pause until they say
   otherwise.
 
+## Before writing code
+
+For anything beyond a small, contained change:
+
+1. **Plan.** Agree on what you're building and why: scope, approach, and
+   what's out of scope.
+2. **Shape.** Before implementing, propose the skeleton: new or changed
+   types, function signatures, data shapes, and how data moves between
+   layers. Work it out with the developer until they agree. This is where
+   the expensive decisions get made, while they're still cheap to change.
+
+Log the agreed plan and skeleton as a `plan` entry. A plan or skeleton that
+already exists in an issue or doc counts: link to it instead of repeating it.
+
 ## Stop and ask
 
 Stop before acting when a decision matches any trigger below. Ask right away,
@@ -95,14 +109,30 @@ Every entry has:
 
 | `type` | Extra fields |
 |---|---|
+| `plan` | `goal`, `scope`, `out_of_scope`, `builds_on`, `source` (a link to the issue or doc, if any), `skeleton` (see below) |
 | `stop` | `question`, `options`, `trigger`, `answer`, `context`, `cost` |
 | `decision` | `question`, `decision`, `why`, `alternatives`, `cost` |
 | `opportunity` | `noticed`, `why_not_done`, `follow_up`, `effort` |
 | `check` | `behaviour`, `method` (`test`, `agent-browser`, `manual-needed`, `not-covered`), `detail` |
 | `commit` | `sha`, `entries` (the ids this commit contains) |
 
-The review page numbers entries for display (S1, D1, O1, C1), so ids never
-need to be sequential.
+A plan's `skeleton` is structured so the review page can draw it:
+
+```json
+{
+  "flow": ["Wizard steps", "CreateAssignmentForm", "buildCreatePayload", "POST /assignments"],
+  "items": [
+    {"file": "utils/createAssignmentForm.ts", "symbol": "buildCreatePayload(form)",
+     "change": "new", "purpose": "Turns a valid form into the create request"}
+  ]
+}
+```
+
+`change` is `new`, `changed`, or `removed`. Write `purpose` in plain words,
+not code.
+
+The review page numbers entries for display (P1, S1, D1, O1, C1), so ids
+never need to be sequential.
 
 Write each entry at the moment it happens, never afterwards. The review page
 is built only from this log, so an entry made up after the fact is a false
@@ -118,7 +148,13 @@ withdraw something, append a new entry of the same type with `supersedes`
 If the entry you'd supersede is a `stop`, the developer made that call:
 stop and ask again instead of superseding it yourself.
 
-### Cleanup
+## When the work is ready for review
+
+When a feature is finished, before a PR is opened, or when the developer
+says the branch is done, suggest running `/your-call:generate`. Suggest it
+once per milestone. Don't repeat it if they decline.
+
+## Cleanup
 
 A log is deleted once its branch is merged or no longer exists. The review
 page keeps the record.
