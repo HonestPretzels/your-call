@@ -1,0 +1,14 @@
+{
+  "name": "your-call",
+  "owner": {
+    "name": "Tom Maurer",
+    "url": "https://github.com/HonestPretzels"
+  },
+  "description": "The your-call plugin for Claude Code.",
+  "plugins": [
+    {
+      "name": "your-call",
+      "source": "."
+    }
+  ]
+}
