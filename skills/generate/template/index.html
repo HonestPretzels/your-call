@@ -145,9 +145,11 @@ button.node { cursor: pointer; }
 .detail { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: .9rem; }
 .detail dt { color: var(--muted); }
 .detail dd { margin: 0; min-width: 0; }
-.history { display: grid; gap: 8px; border-left: 2px solid var(--line); padding-left: 12px; }
-.history-item { font-size: .85rem; display: grid; gap: 2px; }
-.history-item .who { color: var(--muted); font-size: .78rem; }
+.chip.marked { background: var(--accent); color: var(--surface); font-weight: 600; }
+.entry.marked { box-shadow: 0 0 0 2px var(--accent); }
+.mark { font-size: .85rem; padding: 5px 12px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 6px; cursor: pointer; }
+.mark[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+.mark:disabled { opacity: .6; cursor: progress; }
 .entry-links { display: flex; flex-wrap: wrap; gap: 12px; font-size: .8rem; color: var(--muted); }
 
 /* Behaviour, calibration */
@@ -184,7 +186,11 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 const short = sha => (sha || "").slice(0, 7);
 
 let data, model;
-const state = { filter: "all", layer: null, diffs: new Set() };
+const state = { filter: "all", layer: null, diffs: new Set(), open: new Set() };
+// Entry ids marked to discuss, kept in the page's database as marks/<entry id>.
+// marksDb stays null where the database isn't available; the page still works without it.
+let marksDb = null;
+const marks = new Set();
 
 /** Fold supersede chains, number heads, and index everything the page looks up. */
 function buildModel(d) {
@@ -197,20 +203,17 @@ function buildModel(d) {
     while (cur.supersedes && byId.has(cur.supersedes)) { cur = byId.get(cur.supersedes); chain.push(cur); }
     return chain; // newest first
   };
-  const reviewsByTarget = new Map();
   const commitByEntry = new Map();
   for (const e of d.entries) {
-    if (e.type === "review") (reviewsByTarget.get(e.target) || reviewsByTarget.set(e.target, []).get(e.target)).push(e);
     if (e.type === "commit") for (const id of e.entries || []) commitByEntry.set(id, e.sha);
   }
   const heads = d.entries.filter(e => LETTER[e.type] && !supersededBy.has(e.id));
   const items = heads.map(head => {
     const chain = chainOf(head);
     const root = chain[chain.length - 1];
-    const reviews = chain.flatMap(c => reviewsByTarget.get(c.id) || []);
     const commits = [...new Set(chain.map(c => commitByEntry.get(c.id)).filter(Boolean))];
     const files = [...new Set(chain.flatMap(c => c.files || []))];
-    return { head, chain, root, reviews, commits, files };
+    return { head, chain, root, commits, files };
   });
   items.sort((a, b) => (a.root.time || "").localeCompare(b.root.time || ""));
   const counters = {};
@@ -374,33 +377,29 @@ function entryBody(e) {
   return [];
 }
 
-function historyHtml(it) {
-  const events = [];
-  for (const c of it.chain.slice(1)) events.push({ time: c.time, html: `<span class="who">${esc(c.author)} · earlier version</span><span>${esc(c.decision || c.answer || c.noticed)}</span>` });
-  for (const c of it.chain.slice(0, -1)) events.push({ time: c.time, html: `<span class="who">${esc(c.author)} · changed</span><span>${esc(c.reason)}</span>` });
-  for (const r of it.reviews) events.push({ time: r.time, html: `<span class="who">${esc(r.author)} · review: ${esc(r.verdict)}</span><span>${esc(r.note)}</span>` });
-  if (!events.length) return "";
-  events.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
-  return `<div><p class="eyebrow">History</p><div class="history">${events.map(ev => `<div class="history-item">${ev.html}</div>`).join("")}</div></div>`;
-}
-
 function renderDecisions() {
   const kinds = ["stop", "decision", "opportunity"];
   const all = model.items.filter(it => kinds.includes(it.head.type));
-  const shown = all.filter(it => state.filter === "all" || it.head.type === state.filter);
+  const shown = all.filter(it => state.filter === "all" || (state.filter === "marked" ? marks.has(it.head.id) : it.head.type === state.filter));
   const count = k => all.filter(it => it.head.type === k).length;
+  const markedCount = all.filter(it => marks.has(it.head.id)).length;
   return `
     <section aria-labelledby="dec-h">
       <h2 id="dec-h">Decisions</h2>
+      <p class="note">${marksDb
+        ? "Mark anything you want to discuss or change, then run /your-call:review."
+        : "Marking isn't available in this view. Run /your-call:review and name the entries you want to discuss, like D3 or S2."}</p>
       <div class="filters" role="group" aria-label="Filter decisions">
         <button class="filter" data-f="all" aria-pressed="${state.filter === "all"}">All <span class="muted">${all.length}</span></button>
         ${kinds.map(k => `<button class="filter" data-f="${k}" aria-pressed="${state.filter === k}"><span class="dot ${k}"></span>${KIND_LABEL[k]} <span class="muted">${count(k)}</span></button>`).join("")}
+        ${marksDb ? `<button class="filter" data-f="marked" aria-pressed="${state.filter === "marked"}">Marked to discuss <span class="muted">${markedCount}</span></button>` : ""}
       </div>
       <div class="list">${shown.map(it => {
         const e = it.head;
-        const changed = it.chain.length > 1 || it.reviews.length;
+        const changed = it.chain.length > 1;
+        const marked = marks.has(e.id);
         return `
-        <details class="entry ${e.type}">
+        <details class="entry ${e.type}${marked ? " marked" : ""}" data-entry="${esc(e.id)}"${state.open.has(e.id) ? " open" : ""}>
           <summary>
             <div class="where"><span class="id">${it.num}</span>${e.area ? `<span class="area">${esc(e.area)}</span>` : ""}<span>${esc(e.where)}</span></div>
             <dl class="qa">
@@ -412,11 +411,12 @@ function renderDecisions() {
               <span class="chip ${e.type}">${KIND_LABEL[e.type]}</span>
               ${e.trigger ? `<span class="chip">${esc(e.trigger)}</span>` : ""}
               ${changed ? `<span class="chip history">Changed</span>` : ""}
+              ${marked ? `<span class="chip marked">Marked to discuss</span>` : ""}
             </div>
           </summary>
           <div class="body">
             <dl class="detail">${entryBody(e).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
-            ${historyHtml(it)}
+            ${marksDb ? `<div><button class="mark" data-mark="${esc(e.id)}" aria-pressed="${marked}">${marked ? "Marked to discuss" : "Mark to discuss"}</button></div>` : ""}
             <div class="entry-links">
               ${it.commits.map(c => `<a href="${esc(commitUrl(c))}">Commit <span class="mono">${short(c)}</span></a>`).join("")}
               ${it.files.length ? `<span class="mono">${it.files.map(esc).join(", ")}</span>` : ""}
@@ -472,8 +472,43 @@ document.getElementById("app").addEventListener("click", ev => {
   const t = ev.target.closest(".toggle");
   if (t) { const k = t.dataset.diff; state.diffs.has(k) ? state.diffs.delete(k) : state.diffs.add(k); renderPanel(); return; }
   const f = ev.target.closest(".filter");
-  if (f) { state.filter = f.dataset.f; render(); }
+  if (f) { state.filter = f.dataset.f; render(); return; }
+  const m = ev.target.closest(".mark");
+  if (m) toggleMark(m.dataset.mark, m);
 });
+
+// Remember which entries are open so a re-render doesn't collapse them.
+document.getElementById("app").addEventListener("toggle", ev => {
+  const id = ev.target.dataset?.entry;
+  if (!id) return;
+  ev.target.open ? state.open.add(id) : state.open.delete(id);
+}, true);
+
+async function toggleMark(id, button) {
+  if (!marksDb) return;
+  button.disabled = true;
+  try {
+    const ref = marksDb.collection("marks").doc(id);
+    if (marks.has(id)) await ref.delete();
+    else await ref.set({ marked_at: new Date().toISOString() });
+  } catch (e) {
+    button.textContent = "Couldn't save. Try again.";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function connectMarks() {
+  const db = await window.claude?.use?.("db");
+  if (!db) return;
+  marksDb = db;
+  render();
+  db.collection("marks").onSnapshot(snap => {
+    marks.clear();
+    for (const doc of snap.docs) marks.add(doc.id);
+    render();
+  }, () => { marksDb = null; render(); });
+}
 
 fetch("review.json")
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -482,6 +517,7 @@ fetch("review.json")
     model = buildModel(d);
     document.title = `${d.title || d.branch} review`;
     render();
+    connectMarks();
   })
   .catch(() => {
     document.getElementById("app").innerHTML = `<p class="status-msg">This review's data didn't load. Ask the person who generated it to run /your-call:generate again.</p>`;

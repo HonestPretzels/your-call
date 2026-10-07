@@ -64,19 +64,13 @@
     },
     {
       "id": "d-ar-9x2c", "type": "decision", "author": "Sam Lee", "time": "2026-10-07T15:00:00Z",
-      "supersedes": "d-ar-4k1m", "reason": "Review: the display name changes when a user renames themselves, so caching it in the item response goes stale.",
+      "supersedes": "d-ar-4k1m", "reason": "The display name changes when a user renames themselves, so caching it in the item response goes stale.",
       "area": "Data contract", "where": "GET /lists/:id", "files": ["server/lists.ts", "app/useShoppingList.ts"],
       "question": "How should the API say who added an item?",
       "decision": "Only added_by_id on each item, plus a members list on the household.",
       "why": "The app already has the household's members, so names stay current.",
       "alternatives": ["Keep the name on each item"],
       "cost": "Medium. The response shape is a contract with the app."
-    },
-    {
-      "id": "r-sl-5t6y", "type": "review", "author": "Sam Lee", "time": "2026-10-07T14:30:00Z",
-      "target": "d-ar-4k1m", "verdict": "revisit",
-      "note": "Names go stale if someone renames themselves. Use the household's member list instead.",
-      "outcome": { "superseded_by": "d-ar-9x2c" }
     },
     {
       "id": "d-ar-6r2t", "type": "decision", "author": "Alex Rivera", "time": "2026-10-05T13:00:00Z",
@@ -191,10 +185,10 @@
       "suggestion": null
     },
     {
-      "kind": "Changed in review",
+      "kind": "Should have asked",
       "targets": ["d-ar-9x2c"],
       "rule": "Cost to change: contracts",
-      "explanation": "The response shape was logged, not asked, and a reviewer changed it. Contract decisions already require a stop, so this one should have been asked.",
+      "explanation": "The response shape was logged, not asked, and later changed. Contract decisions already require a stop, so this one should have been asked.",
       "suggestion": "No rule change. The trigger exists; it was missed."
     }
   ]
