@@ -156,5 +156,5 @@ once per milestone. Don't repeat it if they decline.
 
 ## Cleanup
 
-A log is deleted once its branch is merged or no longer exists. The review
-page keeps the record.
+A log is deleted once its branch is merged or no longer exists, and it hasn't
+been written to in more than two weeks. The review page keeps the record.

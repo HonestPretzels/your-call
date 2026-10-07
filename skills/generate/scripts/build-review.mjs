@@ -3,17 +3,24 @@
 // branch's decision log. From an existing review.json it keeps only the log
 // entries (merged by id) and the PR link. Judgment fields (title, summary,
 // layers, file why, flows, plan_vs_built, calibration) are left empty for the
-// generate skill to write fresh on every run.
+// generate skill to write fresh on every run, into a separate judgment file
+// that a second run merges in with --judgment.
 //
 // Usage:
 //   node build-review.mjs --out review.json [--existing old-review.json]
+//                         [--judgment judgment.json] [--page-out index.html]
 //                         [--base main] [--head branch] [--log path/to/log.jsonl]
 //                         [--repo-dir .]
+//
+// --page-out writes the page template with its <title> set from the review's title.
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), "..", "template", "index.html");
 
 const DEFAULTS = {
   fileLines: 1500,
@@ -180,6 +187,31 @@ function fileCommits(repoDir, from, to, file) {
   return tryGit(repoDir, ["log", "--format=%H", `${from}..${to}`, "--", file.path]).split("\n").filter(Boolean);
 }
 
+/** Overlay the generate skill's judgment fields onto the review. Unknown file paths are reported, not added. */
+function applyJudgment(review, judgment) {
+  for (const key of ["title", "summary", "layers", "flows", "plan_vs_built", "calibration"]) {
+    if (judgment[key] !== undefined) review[key] = judgment[key];
+  }
+  const byPath = new Map(review.files.map(f => [f.path, f]));
+  for (const [path, info] of Object.entries(judgment.files || {})) {
+    const f = byPath.get(path);
+    if (!f) { warn(`Judgment names a file that isn't in this diff: ${path}`); continue; }
+    if (info.layer !== undefined) f.layer = info.layer;
+    if (info.why !== undefined) f.why = info.why;
+  }
+  const layerIds = new Set(review.layers.map(l => l.id));
+  for (const f of review.files) {
+    if (!f.layer) warn(`No layer for ${f.path}`);
+    else if (!layerIds.has(f.layer)) warn(`${f.path} names layer "${f.layer}", which isn't in layers`);
+  }
+}
+
+function writePage(path, title) {
+  const escaped = String(title).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const html = readFileSync(TEMPLATE, "utf8").replace(/<title>[^<]*<\/title>/, `<title>${escaped}</title>`);
+  writeFileSync(path, html);
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const repoDir = tryGit(args["repo-dir"] || process.cwd(), ["rev-parse", "--show-toplevel"]);
@@ -251,9 +283,12 @@ function main() {
     calibration: [],
   };
 
+  if (args.judgment) applyJudgment(review, JSON.parse(readFileSync(args.judgment, "utf8")));
+
   const out = JSON.stringify(review, null, 2);
   if (args.out) writeFileSync(args.out, out + "\n");
   else process.stdout.write(out + "\n");
+  if (args["page-out"]) writePage(args["page-out"], review.title || `${branch} review`);
 
   const omitted = files.filter(f => f.diff_omitted);
   process.stderr.write(
