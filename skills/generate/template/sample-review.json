@@ -1,0 +1,201 @@
+{
+  "format": 1,
+  "sample": true,
+  "title": "Share shopping lists with household members",
+  "repo": { "name": "pantry", "url": "https://github.com/example/pantry" },
+  "branch": "42-shared-shopping-lists",
+  "base": "main",
+  "pr": { "number": 57, "url": "https://github.com/example/pantry/pull/57" },
+  "generated": { "at": "2026-10-07T19:40:00Z", "by": "Alex Rivera" },
+
+  "summary": [
+    "Shopping lists can be shared with other members of a household.",
+    "A new household_members table links users to a household.",
+    "The list screen shows who added each item.",
+    "Shared lists update for everyone through the existing polling."
+  ],
+
+  "entries": [
+    {
+      "id": "p-ar-a1b2", "type": "plan", "author": "Alex Rivera", "time": "2026-10-05T09:00:00Z",
+      "area": "Plan", "where": "Shared lists", "files": [],
+      "goal": "People in the same household can see and edit one shopping list together.",
+      "scope": "Households, list sharing, and showing who added each item.",
+      "out_of_scope": "Invitations by email, and real-time sync.",
+      "builds_on": "The existing lists API and its polling.",
+      "source": "https://github.com/example/pantry/issues/42",
+      "skeleton": {
+        "flow": ["List screen", "useShoppingList", "GET /lists/:id", "ListService.forHousehold"],
+        "items": [
+          { "file": "db/schema.sql", "symbol": "household_members", "change": "new", "purpose": "Which users belong to which household" },
+          { "file": "db/schema.sql", "symbol": "list_items.added_by", "change": "new", "purpose": "The user who added each item" },
+          { "file": "server/lists.ts", "symbol": "ListService.forHousehold()", "change": "new", "purpose": "Every list a household can see" },
+          { "file": "server/lists.ts", "symbol": "canEditList()", "change": "changed", "purpose": "Household members can edit, not just the owner" },
+          { "file": "app/useShoppingList.ts", "symbol": "useShoppingList(id)", "change": "changed", "purpose": "Returns who added each item" }
+        ]
+      }
+    },
+    {
+      "id": "s-ar-7f3k", "type": "stop", "author": "Alex Rivera", "time": "2026-10-05T10:00:00Z",
+      "area": "Data model", "where": "db/schema.sql", "files": ["db/schema.sql"],
+      "question": "Should a user be able to belong to more than one household?",
+      "options": ["One household per user", "Many households per user"],
+      "trigger": "Changes stored data", "answer": "One for now. Keep the table shaped so many is possible later.",
+      "context": "Many households changes every list query to need a household picker.",
+      "cost": "High. Schema and every list query."
+    },
+    {
+      "id": "s-ar-2m8n", "type": "stop", "author": "Alex Rivera", "time": "2026-10-05T11:30:00Z",
+      "area": "Permissions", "where": "server/lists.ts · canEditList", "files": ["server/lists.ts"],
+      "question": "Can any household member delete a shared list, or only its creator?",
+      "options": ["Only the creator", "Any member"],
+      "trigger": "Authorization", "answer": "Only the creator can delete. Anyone can edit items.",
+      "context": "Deleting loses everyone's items, so it stays with one person.",
+      "cost": "Low. One check."
+    },
+    {
+      "id": "d-ar-4k1m", "type": "decision", "author": "Alex Rivera", "time": "2026-10-05T12:00:00Z",
+      "area": "Data contract", "where": "GET /lists/:id", "files": ["server/lists.ts", "app/useShoppingList.ts"],
+      "question": "How should the API say who added an item?",
+      "decision": "An added_by object with the user's id and display name on each item.",
+      "why": "The screen needs the name, and one request is cheaper than a lookup per item.",
+      "alternatives": ["Only the user id, with a separate users request"],
+      "cost": "Medium. The response shape is a contract with the app."
+    },
+    {
+      "id": "d-ar-9x2c", "type": "decision", "author": "Sam Lee", "time": "2026-10-07T15:00:00Z",
+      "supersedes": "d-ar-4k1m", "reason": "Review: the display name changes when a user renames themselves, so caching it in the item response goes stale.",
+      "area": "Data contract", "where": "GET /lists/:id", "files": ["server/lists.ts", "app/useShoppingList.ts"],
+      "question": "How should the API say who added an item?",
+      "decision": "Only added_by_id on each item, plus a members list on the household.",
+      "why": "The app already has the household's members, so names stay current.",
+      "alternatives": ["Keep the name on each item"],
+      "cost": "Medium. The response shape is a contract with the app."
+    },
+    {
+      "id": "r-sl-5t6y", "type": "review", "author": "Sam Lee", "time": "2026-10-07T14:30:00Z",
+      "target": "d-ar-4k1m", "verdict": "revisit",
+      "note": "Names go stale if someone renames themselves. Use the household's member list instead.",
+      "outcome": { "superseded_by": "d-ar-9x2c" }
+    },
+    {
+      "id": "d-ar-6r2t", "type": "decision", "author": "Alex Rivera", "time": "2026-10-05T13:00:00Z",
+      "area": "Code structure", "where": "server/lists.ts", "files": ["server/lists.ts"],
+      "question": "Where should the household check live?",
+      "decision": "In canEditList, next to the existing owner check.",
+      "why": "Every route already calls it, so nothing can skip the check.",
+      "alternatives": ["A separate middleware"],
+      "cost": "Low."
+    },
+    {
+      "id": "d-ar-3v5b", "type": "decision", "author": "Alex Rivera", "time": "2026-10-05T14:00:00Z",
+      "area": "Visual", "where": "List screen · item row", "files": ["app/ListItemRow.tsx"],
+      "question": "How should the item row show who added it?",
+      "decision": "The person's initials in a small circle at the end of the row.",
+      "why": "The full name crowded the row on phones.",
+      "alternatives": ["Full name under the item", "Only on long-press"],
+      "cost": "Low."
+    },
+    {
+      "id": "o-ar-3k8s", "type": "opportunity", "author": "Alex Rivera", "time": "2026-10-05T13:30:00Z",
+      "area": "Performance", "where": "server/lists.ts", "files": ["server/lists.ts"],
+      "noticed": "The list query loads every item and then filters out checked ones in code.",
+      "why_not_done": "It was like that before this branch and isn't part of sharing.",
+      "follow_up": "Filter checked items in the query.",
+      "effort": "Small."
+    },
+    {
+      "id": "c-ar-1b4n", "type": "check", "author": "Alex Rivera", "time": "2026-10-05T15:00:00Z",
+      "area": "Permissions", "where": "server/lists.ts", "files": [],
+      "behaviour": "A household member can edit items but can't delete the list",
+      "method": "test", "detail": "lists.test.ts: member edit and delete cases."
+    },
+    {
+      "id": "c-ar-9h2k", "type": "check", "author": "Alex Rivera", "time": "2026-10-05T15:10:00Z",
+      "area": "List screen", "where": "List screen", "files": [],
+      "behaviour": "Initials show on each item and fit on a narrow phone",
+      "method": "agent-browser", "detail": "Checked at 375px wide with two members."
+    },
+    {
+      "id": "c-ar-6p3r", "type": "check", "author": "Alex Rivera", "time": "2026-10-05T15:20:00Z",
+      "area": "Sync", "where": "useShoppingList", "files": [],
+      "behaviour": "An item added on one phone shows up on another within one polling interval",
+      "method": "manual-needed", "detail": "Sign in as two members on two devices and add an item."
+    },
+    {
+      "id": "c-ar-4x7m", "type": "check", "author": "Alex Rivera", "time": "2026-10-05T15:30:00Z",
+      "area": "Data model", "where": "db/schema.sql", "files": [],
+      "behaviour": "Existing lists keep working for users without a household",
+      "method": "not-covered", "detail": "No migration test exists for this."
+    },
+    { "id": "k-ar-0001", "type": "commit", "author": "Alex Rivera", "time": "2026-10-05T10:40:00Z", "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5", "entries": ["s-ar-7f3k"] },
+    { "id": "k-ar-0002", "type": "commit", "author": "Alex Rivera", "time": "2026-10-05T13:20:00Z", "sha": "2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6", "entries": ["s-ar-2m8n", "d-ar-4k1m", "d-ar-6r2t", "o-ar-3k8s"] },
+    { "id": "k-ar-0003", "type": "commit", "author": "Alex Rivera", "time": "2026-10-05T14:30:00Z", "sha": "3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7", "entries": ["d-ar-3v5b"] },
+    { "id": "k-sl-0004", "type": "commit", "author": "Sam Lee", "time": "2026-10-07T15:10:00Z", "sha": "4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7f8", "entries": ["d-ar-9x2c"] }
+  ],
+
+  "commits": [
+    { "sha": "4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7f8", "subject": "Send added_by_id and use the household member list", "author": "Sam Lee", "time": "2026-10-07T15:10:00Z" },
+    { "sha": "3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7", "subject": "Show who added each item", "author": "Alex Rivera", "time": "2026-10-05T14:30:00Z" },
+    { "sha": "2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6", "subject": "Let household members edit shared lists", "author": "Alex Rivera", "time": "2026-10-05T13:20:00Z" },
+    { "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5", "subject": "Add households", "author": "Alex Rivera", "time": "2026-10-05T10:40:00Z" }
+  ],
+
+  "layers": [
+    { "id": "screens", "name": "screens", "tier": "App", "kind": "changed" },
+    { "id": "hooks", "name": "hooks", "tier": "App", "kind": "contract" },
+    { "id": "server", "name": "lists service", "tier": "Server", "kind": "contract" },
+    { "id": "auth", "name": "auth", "tier": "Server", "kind": "depended-on", "note": "reads the session user" },
+    { "id": "db", "name": "schema", "tier": "Database", "kind": "contract" },
+    { "id": "deps", "name": "dependencies", "tier": "Other", "kind": "changed" }
+  ],
+
+  "files": [
+    { "path": "app/ListItemRow.tsx", "status": "M", "add": 18, "del": 3, "layer": "screens", "why": "Shows the initials of whoever added the item.", "commits": ["3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7"],
+      "diff": "@@ -12,6 +12,9 @@ export function ListItemRow({ item, members }: Props) {\n   return (\n     <Row>\n       <Checkbox checked={item.checked} onChange={onToggle} />\n       <Text>{item.name}</Text>\n+      <Initials>\n+        {initialsOf(members[item.added_by_id])}\n+      </Initials>\n     </Row>\n   );\n }" },
+    { "path": "app/useShoppingList.ts", "status": "M", "add": 22, "del": 6, "layer": "hooks", "why": "Returns the household's members alongside the items.", "commits": ["2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6", "4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7f8"],
+      "diff": "@@ -8,10 +8,14 @@ export function useShoppingList(id: string) {\n-  const { data } = useQuery(['list', id], () => api.get(`/lists/${id}`), {\n+  const { data } = useQuery(['list', id], () => api.get<ListResponse>(`/lists/${id}`), {\n     refetchInterval: POLL_MS,\n   });\n-  return { items: data?.items ?? [] };\n+  const members = useHouseholdMembers(data?.household_id);\n+  return {\n+    items: data?.items ?? [],\n+    members,\n+  };\n }" },
+    { "path": "server/lists.ts", "status": "M", "add": 64, "del": 12, "layer": "server", "why": "Household members can see and edit lists; only the creator can delete.", "commits": ["2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6", "4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7f8"],
+      "diff": "@@ -40,9 +40,16 @@ export class ListService {\n-export function canEditList(user: User, list: List): boolean {\n-  return list.owner_id === user.id;\n-}\n+export function canEditList(user: User, list: List): boolean {\n+  if (list.owner_id === user.id) return true;\n+  return list.household_id !== null && list.household_id === user.household_id;\n+}\n+\n+export function canDeleteList(user: User, list: List): boolean {\n+  return list.owner_id === user.id;\n+}" },
+    { "path": "server/lists.test.ts", "status": "M", "add": 48, "del": 0, "layer": "server", "why": "Member edit and delete cases.", "commits": ["2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6"],
+      "diff": "@@ -60,0 +61,12 @@\n+describe('household members', () => {\n+  it('can edit items on a shared list', () => {\n+    expect(canEditList(member, sharedList)).toBe(true);\n+  });\n+\n+  it('cannot delete a list they did not create', () => {\n+    expect(canDeleteList(member, sharedList)).toBe(false);\n+  });\n+\n+  it('cannot edit a list from another household', () => {\n+    expect(canEditList(outsider, sharedList)).toBe(false);\n+  });\n+});" },
+    { "path": "db/schema.sql", "status": "M", "add": 14, "del": 0, "layer": "db", "why": "Adds household_members and list_items.added_by_id.", "commits": ["1a2b3c4d5e6f708192a3b4c5d6e7f80912a3b4c5"],
+      "diff": "@@ -30,3 +30,17 @@ CREATE TABLE list_items (\n   checked BOOLEAN NOT NULL DEFAULT FALSE\n );\n+\n+CREATE TABLE household_members (\n+  household_id INTEGER NOT NULL REFERENCES households(id),\n+  user_id INTEGER NOT NULL REFERENCES users(id),\n+  PRIMARY KEY (household_id, user_id)\n+);\n+\n+-- One household per user for now; the composite key allows many later.\n+CREATE UNIQUE INDEX one_household_per_user ON household_members(user_id);\n+\n+ALTER TABLE list_items\n+  ADD COLUMN added_by_id INTEGER REFERENCES users(id);" },
+    { "path": "package-lock.json", "status": "M", "add": 212, "del": 180, "layer": "deps", "why": "Lockfile update from adding the initials helper package.", "commits": ["3c4d5e6f708192a3b4c5d6e7f80912a3b4c5d6e7"], "diff": null, "diff_omitted": "lockfile" }
+  ],
+
+  "flows": [
+    {
+      "name": "Open a shopping list",
+      "before": ["List screen", "GET /lists/:id", "owner check"],
+      "after": [
+        { "label": "List screen", "new": false }, { "label": "GET /lists/:id", "new": false },
+        { "label": "household check", "new": true }, { "label": "items + members", "new": true }
+      ]
+    }
+  ],
+
+  "plan_vs_built": [
+    { "planned": "Households table", "built": "household_members, one household per user", "status": "changed", "settled_by": ["s-ar-7f3k"] },
+    { "planned": "Members can edit shared lists", "built": "Members edit items; only the creator deletes", "status": "changed", "settled_by": ["s-ar-2m8n"] },
+    { "planned": "Show who added each item", "built": "Initials on each item row", "status": "as-planned", "settled_by": ["d-ar-3v5b"] },
+    { "planned": null, "built": "Initials helper package", "status": "added", "settled_by": [], "note": "Added with no stop, though new dependencies are a stop trigger" }
+  ],
+
+  "calibration": [
+    {
+      "kind": "Missed stop",
+      "targets": [],
+      "rule": "Ecosystem: adding a dependency",
+      "explanation": "The initials helper package was added without asking. New dependencies are always a stop.",
+      "suggestion": null
+    },
+    {
+      "kind": "Changed in review",
+      "targets": ["d-ar-9x2c"],
+      "rule": "Cost to change: contracts",
+      "explanation": "The response shape was logged, not asked, and a reviewer changed it. Contract decisions already require a stop, so this one should have been asked.",
+      "suggestion": "No rule change. The trigger exists; it was missed."
+    }
+  ]
+}
