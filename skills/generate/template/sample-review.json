@@ -174,9 +174,5 @@
     { "planned": "Members can edit shared lists", "built": "Members edit items; only the creator deletes", "status": "changed", "settled_by": ["s-ar-2m8n"] },
     { "planned": "Show who added each item", "built": "Initials on each item row", "status": "as-planned", "settled_by": ["d-ar-3v5b"] },
     { "planned": null, "built": "Initials helper package", "status": "added", "settled_by": [], "note": "Added with no stop, though new dependencies are a stop trigger" }
-  ],
-
-  "missed_stops": [
-    { "entry": "d-ar-9x2c", "trigger": "Cost to change: the list response shape is a contract the app depends on" }
   ]
 }

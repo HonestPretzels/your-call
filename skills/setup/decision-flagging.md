@@ -88,7 +88,7 @@ Don't stop for decisions the plan already makes explicitly. Log those instead.
 - State the question in one sentence.
 - Give the options, with your recommendation first and why.
 - Name the trigger that made you stop.
-- After the answer, log the stop with the developer's decision in their words.
+- After the answer, log the stop with the developer's decision.
 
 ## Log everything else
 
@@ -153,6 +153,10 @@ Write a `decision` or `answer` as one short, plain sentence that a reviewer
 can judge without opening the code: what was chosen, not how it was coded.
 Leave out class names, breakpoints, prop names and similar specifics. The
 diff shows them.
+
+A stop's `answer` says what the developer decided, by first name, in plain
+words rather than quoted: "Tom chose the theme override", not "Theme
+override (Recommended)" or "yep, go with that".
 
 The review page numbers entries for display (P1, S1, D1, O1, C1), so ids
 never need to be sequential.

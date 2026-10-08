@@ -130,6 +130,7 @@ button.node { cursor: pointer; }
 
 /* Decisions */
 .group { display: grid; gap: 10px; }
+.area-group { display: grid; gap: 8px; margin-top: 6px; }
 .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
 .tab { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--muted); padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: .92rem; display: inline-flex; gap: 6px; align-items: center; }
 .tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
@@ -152,7 +153,6 @@ button.node { cursor: pointer; }
 .chip.decision { background: var(--log-bg); color: var(--log); font-weight: 600; }
 .chip.opportunity { background: var(--opp-bg); color: var(--opp); font-weight: 600; }
 .chip.history { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
-.chip.missed { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
 .body { padding: 12px 14px 14px; display: grid; gap: 12px; border-top: 1px solid var(--line); }
 .detail { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: .9rem; }
 .detail dt { color: var(--muted); }
@@ -428,23 +428,10 @@ function entryBody(e) {
   return [];
 }
 
-/** Trigger for each item the generator judged should have been a stop, keyed by the item's head id. */
-function missedStops() {
-  const byHead = new Map();
-  for (const m of data.missed_stops || []) {
-    const it = model.items.find(i => i.chain.some(c => c.id === m.entry));
-    if (it) byHead.set(it.head.id, m.trigger || "");
-  }
-  return byHead;
-}
-
-function entryCard(it, missed) {
+function entryCard(it) {
   const e = it.head;
   const changed = it.chain.length > 1;
   const marked = marks.has(e.id);
-  const isMissed = missed.has(e.id);
-  const rows = entryBody(e);
-  if (isMissed && missed.get(e.id)) rows.push(["Should have asked because", missed.get(e.id)]);
   return `
   <details class="entry ${e.type}${marked ? " marked" : ""}" data-entry="${esc(e.id)}"${state.open.has(e.id) ? " open" : ""}>
     <summary>
@@ -454,15 +441,14 @@ function entryCard(it, missed) {
           ? `<dt>Noticed</dt><dd>${esc(e.noticed)}</dd>`
           : `<dt>Question</dt><dd>${esc(e.question)}</dd><dt>${e.type === "stop" ? "Your call" : "Decided"}</dt><dd class="decided">${esc(e.type === "stop" ? e.answer : e.decision)}</dd>`}
       </dl>
-      ${isMissed || changed || marked || e.trigger ? `<div class="chips">
-        ${isMissed ? `<span class="chip missed">Should have asked</span>` : ""}
+      ${changed || marked || e.trigger ? `<div class="chips">
         ${e.trigger ? `<span class="chip">${esc(e.trigger)}</span>` : ""}
         ${changed ? `<span class="chip history">Changed</span>` : ""}
         ${marked ? `<span class="chip marked">Marked to discuss</span>` : ""}
       </div>` : ""}
     </summary>
     <div class="body">
-      <dl class="detail">${rows.filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      <dl class="detail">${entryBody(e).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
       ${entryFiles(it)}
       ${marksDb ? `<div><button class="mark" data-mark="${esc(e.id)}" aria-pressed="${marked}">${marked ? "Marked to discuss" : "Mark to discuss"}</button></div>` : ""}
       <div class="entry-links">
@@ -473,22 +459,37 @@ function entryCard(it, missed) {
   </details>`;
 }
 
+/** Entries under a heading per area, areas in order of their first entry. */
+function byArea(list) {
+  const groups = new Map();
+  for (const it of list) {
+    const area = it.head.area || "Other";
+    (groups.get(area) || groups.set(area, []).get(area)).push(it);
+  }
+  return [...groups].map(([area, items]) => `
+    <div class="area-group">
+      <h3>${esc(area)} <span class="muted">${items.length}</span></h3>
+      <div class="list">${items.map(entryCard).join("")}</div>
+    </div>`).join("");
+}
+
 function renderDecisions() {
-  const missed = missedStops();
   const ofType = t => model.items.filter(it => it.head.type === t);
-  // Should-have-asked first; otherwise keep log order.
-  const toReview = ofType("decision").sort((a, b) => missed.has(b.head.id) - missed.has(a.head.id));
-  const yourCalls = ofType("stop"), noticed = ofType("opportunity");
+  const toReview = ofType("decision"), yourCalls = ofType("stop"), noticed = ofType("opportunity");
   if (!toReview.length && !yourCalls.length && !noticed.length) return "";
-  const cards = list => `<div class="list">${list.map(it => entryCard(it, missed)).join("")}</div>`;
+  const marked = [...toReview, ...yourCalls, ...noticed].filter(it => marks.has(it.head.id));
   const tabs = [
-    { id: "review", label: "To review", items: toReview,
-      note: `Calls made without asking you.${missed.size ? " The ones that should have been asked come first." : ""}`,
-      empty: "Nothing to review. Every call on this branch was yours." },
+    { id: "review", label: "To review", items: toReview, grouped: true,
+      note: "Calls made without asking you.", empty: "Nothing to review. Every call on this branch was yours." },
     { id: "calls", label: "Your calls", items: yourCalls, note: "Questions you answered while building.", empty: "No questions were asked on this branch." },
     { id: "noticed", label: "Noticed, not done", items: noticed, note: "", empty: "Nothing noticed." },
+    ...(marksDb ? [{ id: "marked", label: "Marked", items: marked,
+      note: "What you've marked to discuss. Run /your-call:review to go through them.", empty: "Nothing marked yet." }] : []),
   ];
   const tab = tabs.find(t => t.id === state.tab) || tabs[0];
+  const body = !tab.items.length ? `<p class="muted">${tab.empty}</p>`
+    : tab.grouped ? byArea(tab.items)
+    : `<div class="list">${tab.items.map(entryCard).join("")}</div>`;
   return `
     <section aria-labelledby="dec-h">
       <h2 id="dec-h">Decisions</h2>
@@ -500,7 +501,7 @@ function renderDecisions() {
       </div>
       <div class="group" role="tabpanel" id="tabpanel" aria-labelledby="tab-${tab.id}">
         ${tab.note ? `<p class="note">${tab.note}</p>` : ""}
-        ${tab.items.length ? cards(tab.items) : `<p class="muted">${tab.empty}</p>`}
+        ${body}
       </div>
     </section>`;
 }

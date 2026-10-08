@@ -73,8 +73,7 @@ Read the log entries and the diff (`git diff <base>...HEAD`), then write
   "layers": [{ "id": "api", "name": "core API", "tier": "Backend", "kind": "changed", "note": "optional" }],
   "files": { "path/to/file.ts": { "layer": "api", "why": "One sentence on why it changed" } },
   "flows": [{ "name": "…", "before": ["step"], "after": [{ "label": "step", "new": true }] }],
-  "plan_vs_built": [{ "planned": "…", "built": "…", "status": "changed", "settled_by": ["entry id"], "note": "optional" }],
-  "missed_stops": [{ "entry": "entry id", "trigger": "The stop trigger it matched, and why, in one sentence" }]
+  "plan_vs_built": [{ "planned": "…", "built": "…", "status": "changed", "settled_by": ["entry id"], "note": "optional" }]
 }
 ```
 
@@ -92,12 +91,8 @@ Read the log entries and the diff (`git diff <base>...HEAD`), then write
   says in a few words what was built. For rows that aren't `as-planned`,
   `note` is one plain sentence on how the change came about, with no entry
   ids in it. `settled_by` names the stop or decision entries that settled
-  it. Leave empty when there's no plan.
-- **missed_stops:** logged decisions that matched a stop trigger and should
-  have been asked. The page puts them first in its To review list.
-  Something in the diff with no entry at all goes in `plan_vs_built` as
-  `added`, with a note saying it wasn't logged. Leave empty when nothing was
-  missed.
+  it. Something in the diff with no entry at all goes in as `added`, with a
+  note saying it wasn't logged. Leave empty when there's no plan.
 
 Then build the final files:
 
