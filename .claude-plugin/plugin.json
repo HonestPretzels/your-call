@@ -1,7 +1,7 @@
 {
   "name": "your-call",
   "displayName": "Your Call",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Stay in the loop when an agent writes your code, without approving every diff: live stops for the decisions that are yours, a log of every other judgment call, and a review page at PR time.",
   "author": {
     "name": "Tom Maurer",

@@ -162,6 +162,11 @@ button.node { cursor: pointer; }
 .mark { font-size: .85rem; padding: 5px 12px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); border-radius: 6px; cursor: pointer; }
 .mark[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
 .mark:disabled { opacity: .6; cursor: progress; }
+.entry-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.reviewed-btn { font-size: .85rem; padding: 5px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; cursor: pointer; }
+.reviewed-btn[aria-pressed="true"] { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+.chip.reviewed { background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+.entry.is-reviewed > summary { opacity: .65; }
 .entry-links { display: flex; flex-wrap: wrap; gap: 12px; font-size: .8rem; color: var(--muted); }
 .entry-files { display: grid; gap: 6px; }
 .entry-files .file-head { padding: 8px 12px; }
@@ -206,6 +211,14 @@ const state = { layer: null, diffs: new Set(), open: new Set(), tab: "review" };
 // marksDb stays null where the database isn't available; the page still works without it.
 let marksDb = null;
 const marks = new Set();
+// Entry ids this viewer has marked reviewed. Kept in this browser only, as their own progress.
+const REVIEWED_KEY = "your-call:reviewed";
+const reviewed = new Set((() => { try { return JSON.parse(localStorage.getItem(REVIEWED_KEY)) || []; } catch { return []; } })());
+function toggleReviewed(id) {
+  reviewed.has(id) ? reviewed.delete(id) : reviewed.add(id);
+  try { localStorage.setItem(REVIEWED_KEY, JSON.stringify([...reviewed])); } catch {}
+  render();
+}
 
 /** Fold supersede chains, number heads, and index everything the page looks up. */
 function buildModel(d) {
@@ -432,8 +445,9 @@ function entryCard(it) {
   const e = it.head;
   const changed = it.chain.length > 1;
   const marked = marks.has(e.id);
+  const isReviewed = reviewed.has(e.id);
   return `
-  <details class="entry ${e.type}${marked ? " marked" : ""}" data-entry="${esc(e.id)}"${state.open.has(e.id) ? " open" : ""}>
+  <details class="entry ${e.type}${marked ? " marked" : ""}${isReviewed ? " is-reviewed" : ""}" data-entry="${esc(e.id)}"${state.open.has(e.id) ? " open" : ""}>
     <summary>
       <div class="where"><span class="id">${it.num}</span>${e.area ? `<span class="area">${esc(e.area)}</span>` : ""}<span>${esc(e.where)}</span></div>
       <dl class="qa">
@@ -441,7 +455,8 @@ function entryCard(it) {
           ? `<dt>Noticed</dt><dd>${esc(e.noticed)}</dd>`
           : `<dt>Question</dt><dd>${esc(e.question)}</dd><dt>${e.type === "stop" ? "Your call" : "Decided"}</dt><dd class="decided">${esc(e.type === "stop" ? e.answer : e.decision)}</dd>`}
       </dl>
-      ${changed || marked || e.trigger ? `<div class="chips">
+      ${changed || marked || isReviewed || e.trigger ? `<div class="chips">
+        ${isReviewed ? `<span class="chip reviewed">Reviewed</span>` : ""}
         ${e.trigger ? `<span class="chip">${esc(e.trigger)}</span>` : ""}
         ${changed ? `<span class="chip history">Changed</span>` : ""}
         ${marked ? `<span class="chip marked">Marked to discuss</span>` : ""}
@@ -450,7 +465,10 @@ function entryCard(it) {
     <div class="body">
       <dl class="detail">${entryBody(e).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
       ${entryFiles(it)}
-      ${marksDb ? `<div><button class="mark" data-mark="${esc(e.id)}" aria-pressed="${marked}">${marked ? "Marked to discuss" : "Mark to discuss"}</button></div>` : ""}
+      <div class="entry-actions">
+        <button class="reviewed-btn" data-reviewed="${esc(e.id)}" aria-pressed="${isReviewed}">${isReviewed ? "Reviewed" : "Mark reviewed"}</button>
+        ${marksDb ? `<button class="mark" data-mark="${esc(e.id)}" aria-pressed="${marked}">${marked ? "Marked to discuss" : "Mark to discuss"}</button>` : ""}
+      </div>
       <div class="entry-links">
         ${it.commits.map(c => `<a href="${esc(commitUrl(c))}">Commit <span class="mono">${short(c)}</span></a>`).join("")}
         <span>${esc(e.author)}</span>
@@ -480,7 +498,7 @@ function renderDecisions() {
   const marked = [...toReview, ...yourCalls, ...noticed].filter(it => marks.has(it.head.id));
   const tabs = [
     { id: "review", label: "To review", items: toReview, grouped: true,
-      note: "Calls made without asking you.", empty: "Nothing to review. Every call on this branch was yours." },
+      note: `Calls made without asking you. You've reviewed ${toReview.filter(it => reviewed.has(it.head.id)).length} of ${toReview.length}.`, empty: "Nothing to review. Every call on this branch was yours." },
     { id: "calls", label: "Your calls", items: yourCalls, note: "Questions you answered while building.", empty: "No questions were asked on this branch." },
     { id: "noticed", label: "Noticed, not done", items: noticed, note: "", empty: "Nothing noticed." },
     ...(marksDb ? [{ id: "marked", label: "Marked", items: marked,
@@ -540,6 +558,8 @@ document.getElementById("app").addEventListener("click", ev => {
   }
   const tab = ev.target.closest(".tab");
   if (tab) { state.tab = tab.dataset.tab; render(); document.getElementById(`tab-${state.tab}`)?.focus(); return; }
+  const rv = ev.target.closest(".reviewed-btn");
+  if (rv) { toggleReviewed(rv.dataset.reviewed); return; }
   const m = ev.target.closest(".mark");
   if (m) toggleMark(m.dataset.mark, m);
 });
