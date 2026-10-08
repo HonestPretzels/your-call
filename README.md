@@ -26,9 +26,11 @@ your-call doesn't replace code review. The PR, its diff and your reviewers are a
 
 ### 1. Before code: plan and shape
 
-Most of the decisions that matter are made here. Before writing anything beyond a small change, Claude works through the plan with you: the goal, what's in scope, and what's deliberately left out. Then it proposes the **skeleton**: the new or changed types, function signatures and data shapes, and how data moves between layers. You go back and forth until you agree.
+Most of the decisions that matter are made here. This builds on Claude Code's plan mode, adding some structure to it. Before writing anything beyond a small change, Claude switches to plan mode, so no code gets written until you've agreed. If it isn't sure a task needs planning, it asks first.
 
-The agreed plan and skeleton are logged together. Questions settled while planning become part of the plan, not separate entries, so your review later isn't cluttered with things you already decided together.
+In plan mode, Claude works through the plan with you: the goal, what's in scope, and what's deliberately left out. Then it proposes the **skeleton**: the new or changed types, function signatures and data shapes, and how data moves between layers. You go back and forth until you agree, then approve the plan.
+
+The approved plan and skeleton are logged together. Questions settled while planning become part of the plan, not separate entries, so your review later isn't cluttered with things you already decided together.
 
 ### 2. While building: stop or log
 
