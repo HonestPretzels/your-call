@@ -9,6 +9,35 @@ Approving every edit makes you the bottleneck, and after the hundredth diff it's
 3. **Recap.** When the branch is ready, `/your-call:generate` builds a review page: the plan against what got built, a map of what changed with inline diffs, every decision with its reasoning, and how the behaviour was checked. It links the page from the PR.
 4. **Discuss.** Mark anything on the page you want to talk about or change, then run `/your-call:review` to go through each one with Claude.
 
+```mermaid
+flowchart LR
+  plan["Plan and shape<br/>with Claude"] --> build["Claude builds"]
+  build -- "your decision" --> stop["Claude stops<br/>and asks you"]
+  stop --> build
+  build -- "any other call" --> log["Logged"]
+  log --> build
+  build -- "branch ready" --> page["/your-call:generate<br/>review page"]
+  page --> mark["You mark what<br/>to discuss"]
+  mark --> review["/your-call:review"]
+  review -- "changes" --> build
+```
+
+## The review page
+
+These screenshots use the sample data the page template ships with.
+
+The plan you agreed, and how what got built compares with it:
+
+![The plan section: the goal, scope and out of scope, with plan vs built open below](docs/images/review-plan.png)
+
+A map of what changed, layer by layer. Open a layer to see each file, why it changed, and its diff:
+
+![The system map with the lists service layer open and one file's diff showing](docs/images/review-map.png)
+
+The decisions, in tabs: calls Claude made without asking you, the ones you made, things it noticed but left alone, and what you've marked to discuss:
+
+![The decisions tabs with one decision open and marked to discuss](docs/images/review-decisions.png)
+
 ## Install
 
 In Claude Code:
