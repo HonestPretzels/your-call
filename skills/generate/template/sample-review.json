@@ -20,9 +20,9 @@
       "id": "p-ar-a1b2", "type": "plan", "author": "Alex Rivera", "time": "2026-10-05T09:00:00Z",
       "area": "Plan", "where": "Shared lists", "files": [],
       "goal": "People in the same household can see and edit one shopping list together.",
-      "scope": "Households, list sharing, and showing who added each item.",
-      "out_of_scope": "Invitations by email, and real-time sync.",
-      "builds_on": "The existing lists API and its polling.",
+      "scope": ["Members of a household share one shopping list", "Any member can add and edit items", "The list shows who added each item"],
+      "out_of_scope": ["Real-time sync: the existing polling is enough for now"],
+      "builds_on": ["The existing lists API and its polling"],
       "source": "https://github.com/example/pantry/issues/42",
       "skeleton": {
         "flow": ["List screen", "useShoppingList", "GET /lists/:id", "ListService.forHousehold"],
@@ -176,20 +176,7 @@
     { "planned": null, "built": "Initials helper package", "status": "added", "settled_by": [], "note": "Added with no stop, though new dependencies are a stop trigger" }
   ],
 
-  "calibration": [
-    {
-      "kind": "Missed stop",
-      "targets": [],
-      "rule": "Ecosystem: adding a dependency",
-      "explanation": "The initials helper package was added without asking. New dependencies are always a stop.",
-      "suggestion": null
-    },
-    {
-      "kind": "Should have asked",
-      "targets": ["d-ar-9x2c"],
-      "rule": "Cost to change: contracts",
-      "explanation": "The response shape was logged, not asked, and later changed. Contract decisions already require a stop, so this one should have been asked.",
-      "suggestion": "No rule change. The trigger exists; it was missed."
-    }
+  "missed_stops": [
+    { "entry": "d-ar-9x2c", "trigger": "Cost to change: the list response shape is a contract the app depends on" }
   ]
 }

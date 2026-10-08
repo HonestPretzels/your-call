@@ -27,6 +27,17 @@ For anything beyond a small, contained change:
 Log the agreed plan and skeleton as a `plan` entry. A plan or skeleton that
 already exists in an issue or doc counts: link to it instead of repeating it.
 
+Questions settled while planning and shaping belong to the plan. Ask them
+as usual, but don't log them as stops or decisions: their outcomes go into
+the plan entry.
+
+Keep the plan entry short enough to read at a glance:
+
+- `scope`: 3 to 10 short, general statements of what the branch does, not
+  a list of every element it touches. The skeleton holds the detail.
+- `out_of_scope`: only things you discussed and decided to leave out, which
+  someone could reasonably expect to be included. Often empty.
+
 ## Stop and ask
 
 Stop before acting when a decision matches any trigger below. Ask right away,
@@ -84,6 +95,13 @@ Don't stop for decisions the plan already makes explicitly. Log those instead.
 Log every other decision that involved a real choice, as you make it. Skip
 choices with only one sensible answer.
 
+Don't log:
+
+- Process choices that aren't about the code, such as which branch to start
+  from, tooling, or fixing the log itself.
+- The developer's own instructions. When they tell you what to change, log
+  only the parts you filled in yourself.
+
 When you notice something worth doing that's out of scope (a bug, a smell,
 an inconsistency, a refactor idea), log it as an opportunity. Don't act on it.
 
@@ -109,7 +127,7 @@ Every entry has:
 
 | `type` | Extra fields |
 |---|---|
-| `plan` | `goal`, `scope`, `out_of_scope`, `builds_on`, `source` (a link to the issue or doc, if any), `skeleton` (see below) |
+| `plan` | `goal`, `scope` (list), `out_of_scope` (list), `builds_on` (list), `source` (a link to the issue or doc, if any), `skeleton` (see below) |
 | `stop` | `question`, `options`, `trigger`, `answer`, `context`, `cost` |
 | `decision` | `question`, `decision`, `why`, `alternatives`, `cost` |
 | `opportunity` | `noticed`, `why_not_done`, `follow_up`, `effort` |
@@ -130,6 +148,11 @@ A plan's `skeleton` is structured so the review page can draw it:
 
 `change` is `new`, `changed`, or `removed`. Write `purpose` in plain words,
 not code.
+
+Write a `decision` or `answer` as one short, plain sentence that a reviewer
+can judge without opening the code: what was chosen, not how it was coded.
+Leave out class names, breakpoints, prop names and similar specifics. The
+diff shows them.
 
 The review page numbers entries for display (P1, S1, D1, O1, C1), so ids
 never need to be sequential.

@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap">
 <style>
-/* Layout: one reading column. Summary → plan → system map → flows → decisions → behaviour → calibration. All content comes from review.json. */
+/* Layout: one reading column. Summary → plan → system map → flows → decisions → behaviour. All content comes from review.json. */
 :root {
   --bg: #f6f7f9; --surface: #ffffff; --fg: #1c2230; --muted: #5d6678; --line: #dde1e8;
   --accent: #3b5bdb; --accent-bg: #eaeffd;
@@ -58,7 +58,17 @@ section { display: grid; gap: 14px; }
 .id { font-family: var(--font-mono); }
 
 /* Plan */
-.plan details > summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
+.plan details > summary, .group > summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
+.plan details > summary .muted, .group > summary .muted { font-weight: 400; }
+.goal { font-size: 1.02rem; max-width: 70ch; }
+.plan-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 24px; }
+.plan-lists ul { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; font-size: .92rem; }
+.built { display: grid; gap: 8px; margin-top: 10px; }
+.built-row { display: grid; grid-template-columns: 96px 1fr; gap: 4px 12px; align-items: baseline; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; }
+.built-row .pill { justify-self: start; }
+.built-row .what { display: grid; gap: 3px; min-width: 0; }
+.built-row .as-built { font-size: .9rem; }
+.built-row .refs { font-size: .78rem; color: var(--muted); }
 .skel { display: grid; gap: 14px; margin-top: 10px; }
 .skel-flow { display: grid; gap: 6px; }
 .skel-group { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; min-width: 0; }
@@ -119,11 +129,12 @@ button.node { cursor: pointer; }
 .flow-block { display: grid; gap: 10px; }
 
 /* Decisions */
-.filters { display: flex; flex-wrap: wrap; gap: 8px; }
-.filter { font-size: .85rem; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 5px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
-.filter[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.dot.stop { background: var(--stop); } .dot.decision { background: var(--log); } .dot.opportunity { background: var(--opp); }
+.group { display: grid; gap: 10px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--line); }
+.tab { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--muted); padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: .92rem; display: inline-flex; gap: 6px; align-items: center; }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tab .count { font-size: .75rem; font-weight: 600; background: var(--code-bg); color: var(--muted); border-radius: 999px; padding: 0 7px; font-variant-numeric: tabular-nums; }
+.tab[aria-selected="true"] .count { background: var(--accent-bg); color: var(--accent); }
 .list { display: grid; gap: 10px; }
 .entry { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 6px; min-width: 0; }
 .entry.stop { border-left-color: var(--stop); }
@@ -141,6 +152,7 @@ button.node { cursor: pointer; }
 .chip.decision { background: var(--log-bg); color: var(--log); font-weight: 600; }
 .chip.opportunity { background: var(--opp-bg); color: var(--opp); font-weight: 600; }
 .chip.history { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.chip.missed { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
 .body { padding: 12px 14px 14px; display: grid; gap: 12px; border-top: 1px solid var(--line); }
 .detail { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: .9rem; }
 .detail dt { color: var(--muted); }
@@ -151,21 +163,20 @@ button.node { cursor: pointer; }
 .mark[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
 .mark:disabled { opacity: .6; cursor: progress; }
 .entry-links { display: flex; flex-wrap: wrap; gap: 12px; font-size: .8rem; color: var(--muted); }
+.entry-files { display: grid; gap: 6px; }
+.entry-files .file-head { padding: 8px 12px; }
 
-/* Behaviour, calibration */
+/* Behaviour */
 .tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
 table { border-collapse: collapse; width: 100%; font-size: .9rem; }
 th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
 th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .how { font-size: .82rem; color: var(--muted); }
-.calib { display: grid; gap: 10px; }
-.calib-item { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; }
-.calib-item pre { background: var(--code-bg); border-radius: 6px; padding: 10px 12px; margin: 0; font: .8rem/1.5 var(--font-mono); white-space: pre-wrap; }
 
-@media (prefers-reduced-motion: no-preference) { .entry, .filter, .node { transition: border-color .15s, outline-color .15s; } }
+@media (prefers-reduced-motion: no-preference) { .entry, .node { transition: border-color .15s, outline-color .15s; } }
 @media (max-width: 560px) {
-  .qa, .detail { grid-template-columns: 1fr; }
+  .qa, .detail, .built-row { grid-template-columns: 1fr; }
   .skel-row { grid-template-columns: 64px 1fr; }
   .skel-row .what { grid-column: 2; }
 }
@@ -175,18 +186,22 @@ th { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color:
 
 <script>
 const LETTER = { plan: "P", stop: "S", decision: "D", opportunity: "O", check: "C" };
-const KIND_LABEL = { stop: "Asked you", decision: "Logged", opportunity: "Noticed, not done" };
 const METHOD_LABEL = { test: "Tests", "agent-browser": "Agent, in browser", "manual-needed": "Check yourself", "not-covered": "Not covered" };
 const PLAN_LABEL = { "as-planned": "As planned", changed: "Changed", added: "Added", dropped: "Dropped" };
+const BUILT_ORDER = ["changed", "added", "dropped", "as-planned"];
 const OMIT_LABEL = { lockfile: "Lockfile, diff not shown", binary: "Binary file", generated: "Generated file", "too-large": "Diff too large to show", "over-budget": "Left out to keep the page small" };
 const STATUS_LABEL = { A: "NEW", M: "MODIFIED", D: "DELETED", R: "RENAMED" };
 const LAYER_KIND_LABEL = { changed: "changed", contract: "changed, includes a contract", "depended-on": "depended on, unchanged" };
 
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const short = sha => (sha || "").slice(0, 7);
+// Older logs wrote some list fields as one string.
+const asList = v => Array.isArray(v) ? v : v ? [v] : [];
 
 let data, model;
-const state = { filter: "all", layer: null, diffs: new Set(), open: new Set() };
+// diffs holds open diff keys: a file path in the map panel, "<entry id>|<path>" in an entry.
+// open holds the open <details>: entry ids and data-keep names.
+const state = { layer: null, diffs: new Set(), open: new Set(), tab: "review" };
 // Entry ids marked to discuss, kept in the page's database as marks/<entry id>.
 // marksDb stays null where the database isn't available; the page still works without it.
 let marksDb = null;
@@ -264,22 +279,25 @@ function renderPlan() {
   const sk = p?.skeleton;
   const groups = new Map();
   for (const item of sk?.items || []) (groups.get(item.file) || groups.set(item.file, []).get(item.file)).push(item);
+  const list = (title, items) => items.length ? `<div><span class="eyebrow">${title}</span><ul>${items.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>` : "";
+  const builtRows = [...(data.plan_vs_built || [])].sort((a, b) => BUILT_ORDER.indexOf(a.status) - BUILT_ORDER.indexOf(b.status));
+  const builtCounts = BUILT_ORDER.map(s => [s, builtRows.filter(r => r.status === s).length]).filter(([, n]) => n);
+  const extra = [
+    asList(p?.builds_on).length ? `Builds on ${asList(p.builds_on).map(esc).join(", ")}` : "",
+    p?.source ? `Source: <a href="${esc(p.source)}">${esc(p.source)}</a>` : "",
+  ].filter(Boolean);
   return `
     <section aria-labelledby="plan-h">
       <h2 id="plan-h">Plan and what got built</h2>
       <div class="card plan">
         ${p ? `
           <div class="where"><span class="id">${it.num}</span><span class="area">Plan</span><span>agreed before implementation</span></div>
-          <ul class="summary">
-            ${p.goal ? `<li><b>Goal:</b> ${esc(p.goal)}</li>` : ""}
-            ${p.scope ? `<li><b>Scope:</b> ${esc(p.scope)}</li>` : ""}
-            ${p.out_of_scope ? `<li><b>Out of scope:</b> ${esc(p.out_of_scope)}</li>` : ""}
-            ${p.builds_on ? `<li><b>Builds on:</b> ${esc(p.builds_on)}</li>` : ""}
-          </ul>
-          ${p.source ? `<p class="note">Source: <a href="${esc(p.source)}">${esc(p.source)}</a></p>` : ""}
-          ${sk ? `
-            <details>
-              <summary>Agreed skeleton</summary>
+          ${p.goal ? `<p class="goal">${esc(p.goal)}</p>` : ""}
+          <div class="plan-lists">${list("Scope", asList(p.scope))}${list("Out of scope", asList(p.out_of_scope))}</div>
+          ${extra.length ? `<p class="note">${extra.join(" · ")}</p>` : ""}
+          ${sk && ((sk.flow || []).length || (sk.items || []).length) ? `
+            <details data-keep="skeleton"${state.open.has("skeleton") ? " open" : ""}>
+              <summary>Agreed skeleton <span class="muted">${(sk.items || []).length} items</span></summary>
               <div class="skel">
                 ${(sk.flow || []).length ? `<div class="skel-flow"><span class="eyebrow">Data flow</span><div class="flow">${sk.flow.map(s => `<span class="step">${esc(s)}</span>`).join(`<span class="arrow">→</span>`)}</div></div>` : ""}
                 ${[...groups].map(([file, rows]) => `
@@ -289,14 +307,21 @@ function renderPlan() {
                   </div>`).join("")}
               </div>
             </details>` : ""}` : ""}
-        ${(data.plan_vs_built || []).length ? `
-          <div class="tablewrap"><table>
-            <thead><tr><th>Planned</th><th>Built</th><th></th><th>How it was settled</th></tr></thead>
-            <tbody>${data.plan_vs_built.map(r => `
-              <tr><td>${esc(r.planned ?? "—")}</td><td>${esc(r.built ?? "—")}</td>
-              <td><span class="pill ${esc(r.status)}">${PLAN_LABEL[r.status] || esc(r.status)}</span></td>
-              <td class="how">${[r.settled_by?.length ? refsFor(r.settled_by) : "", esc(r.note || "")].filter(Boolean).join(". ") || "No record"}</td></tr>`).join("")}
-            </tbody></table></div>` : ""}
+        ${builtRows.length ? `
+          <details data-keep="built"${state.open.has("built") ? " open" : ""}>
+            <summary>Plan vs built <span class="muted">${builtCounts.map(([s, n]) => `${n} ${PLAN_LABEL[s].toLowerCase()}`).join(", ")}</span></summary>
+            <div class="built">${builtRows.map(r => `
+              <div class="built-row">
+                <span class="pill ${esc(r.status)}">${PLAN_LABEL[r.status] || esc(r.status)}</span>
+                <div class="what">
+                  <span>${esc(r.status === "added" ? r.built : r.planned ?? "—")}</span>
+                  ${r.status === "changed" || r.status === "dropped" ? `<span class="as-built muted">${r.status === "dropped" ? "Not built" : `Built: ${esc(r.built)}`}</span>` : ""}
+                  ${r.note ? `<span class="as-built">${esc(r.note)}</span>` : ""}
+                  ${r.settled_by?.length ? `<span class="refs">Settled by ${esc(refsFor(r.settled_by))}</span>` : ""}
+                </div>
+              </div>`).join("")}
+            </div>
+          </details>` : ""}
       </div>
     </section>`;
 }
@@ -350,7 +375,33 @@ async function renderPanel() {
           <a href="${esc(compareUrl() + anchors[i])}">Diff on GitHub</a>
         </div>
       </div>
-      ${f.diff && open ? `<div class="diff">${f.diff.split("\n").map(l => `<div class="${l.startsWith("@@") ? "h" : l[0] === "+" ? "a" : l[0] === "-" ? "d" : ""}">${esc(l) || " "}</div>`).join("")}</div>` : ""}
+      ${f.diff && open ? diffBlock(f) : ""}
+    </div>`;
+  }).join("")}</div>`;
+}
+
+function diffBlock(f) {
+  return `<div class="diff">${f.diff.split("\n").map(l => `<div class="${l.startsWith("@@") ? "h" : l[0] === "+" ? "a" : l[0] === "-" ? "d" : ""}">${esc(l) || " "}</div>`).join("")}</div>`;
+}
+
+/** The files an entry names, each with its diff behind a toggle. Paths outside the diff are listed plainly. */
+function entryFiles(it) {
+  if (!it.files.length) return "";
+  return `<div class="entry-files">${it.files.map(path => {
+    const f = data.files.find(x => x.path === path);
+    if (!f) return `<span class="file-path muted">${esc(path)}</span>`;
+    const key = `${it.head.id}|${path}`;
+    const open = state.diffs.has(key);
+    return `
+    <div class="file">
+      <div class="file-head">
+        <span class="file-path">${esc(path)}</span>
+        <span class="counts-n"><span class="plus">+${f.add ?? 0}</span> <span class="minus">−${f.del ?? 0}</span></span>
+        <div class="file-meta">
+          ${f.diff ? `<button class="toggle" data-ediff="${esc(key)}" aria-expanded="${open}">${open ? "Hide diff" : "Show diff"}</button>` : `<span>${f.diff_omitted ? OMIT_LABEL[f.diff_omitted] || esc(f.diff_omitted) : "Diff not included"}</span>`}
+        </div>
+      </div>
+      ${f.diff && open ? diffBlock(f) : ""}
     </div>`;
   }).join("")}</div>`;
 }
@@ -377,54 +428,80 @@ function entryBody(e) {
   return [];
 }
 
+/** Trigger for each item the generator judged should have been a stop, keyed by the item's head id. */
+function missedStops() {
+  const byHead = new Map();
+  for (const m of data.missed_stops || []) {
+    const it = model.items.find(i => i.chain.some(c => c.id === m.entry));
+    if (it) byHead.set(it.head.id, m.trigger || "");
+  }
+  return byHead;
+}
+
+function entryCard(it, missed) {
+  const e = it.head;
+  const changed = it.chain.length > 1;
+  const marked = marks.has(e.id);
+  const isMissed = missed.has(e.id);
+  const rows = entryBody(e);
+  if (isMissed && missed.get(e.id)) rows.push(["Should have asked because", missed.get(e.id)]);
+  return `
+  <details class="entry ${e.type}${marked ? " marked" : ""}" data-entry="${esc(e.id)}"${state.open.has(e.id) ? " open" : ""}>
+    <summary>
+      <div class="where"><span class="id">${it.num}</span>${e.area ? `<span class="area">${esc(e.area)}</span>` : ""}<span>${esc(e.where)}</span></div>
+      <dl class="qa">
+        ${e.type === "opportunity"
+          ? `<dt>Noticed</dt><dd>${esc(e.noticed)}</dd>`
+          : `<dt>Question</dt><dd>${esc(e.question)}</dd><dt>${e.type === "stop" ? "Your call" : "Decided"}</dt><dd class="decided">${esc(e.type === "stop" ? e.answer : e.decision)}</dd>`}
+      </dl>
+      ${isMissed || changed || marked || e.trigger ? `<div class="chips">
+        ${isMissed ? `<span class="chip missed">Should have asked</span>` : ""}
+        ${e.trigger ? `<span class="chip">${esc(e.trigger)}</span>` : ""}
+        ${changed ? `<span class="chip history">Changed</span>` : ""}
+        ${marked ? `<span class="chip marked">Marked to discuss</span>` : ""}
+      </div>` : ""}
+    </summary>
+    <div class="body">
+      <dl class="detail">${rows.filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      ${entryFiles(it)}
+      ${marksDb ? `<div><button class="mark" data-mark="${esc(e.id)}" aria-pressed="${marked}">${marked ? "Marked to discuss" : "Mark to discuss"}</button></div>` : ""}
+      <div class="entry-links">
+        ${it.commits.map(c => `<a href="${esc(commitUrl(c))}">Commit <span class="mono">${short(c)}</span></a>`).join("")}
+        <span>${esc(e.author)}</span>
+      </div>
+    </div>
+  </details>`;
+}
+
 function renderDecisions() {
-  const kinds = ["stop", "decision", "opportunity"];
-  const all = model.items.filter(it => kinds.includes(it.head.type));
-  const shown = all.filter(it => state.filter === "all" || (state.filter === "marked" ? marks.has(it.head.id) : it.head.type === state.filter));
-  const count = k => all.filter(it => it.head.type === k).length;
-  const markedCount = all.filter(it => marks.has(it.head.id)).length;
+  const missed = missedStops();
+  const ofType = t => model.items.filter(it => it.head.type === t);
+  // Should-have-asked first; otherwise keep log order.
+  const toReview = ofType("decision").sort((a, b) => missed.has(b.head.id) - missed.has(a.head.id));
+  const yourCalls = ofType("stop"), noticed = ofType("opportunity");
+  if (!toReview.length && !yourCalls.length && !noticed.length) return "";
+  const cards = list => `<div class="list">${list.map(it => entryCard(it, missed)).join("")}</div>`;
+  const tabs = [
+    { id: "review", label: "To review", items: toReview,
+      note: `Calls made without asking you.${missed.size ? " The ones that should have been asked come first." : ""}`,
+      empty: "Nothing to review. Every call on this branch was yours." },
+    { id: "calls", label: "Your calls", items: yourCalls, note: "Questions you answered while building.", empty: "No questions were asked on this branch." },
+    { id: "noticed", label: "Noticed, not done", items: noticed, note: "", empty: "Nothing noticed." },
+  ];
+  const tab = tabs.find(t => t.id === state.tab) || tabs[0];
   return `
     <section aria-labelledby="dec-h">
       <h2 id="dec-h">Decisions</h2>
       <p class="note">${marksDb
         ? "Mark anything you want to discuss or change, then run /your-call:review."
         : "Marking isn't available in this view. Run /your-call:review and name the entries you want to discuss, like D3 or S2."}</p>
-      <div class="filters" role="group" aria-label="Filter decisions">
-        <button class="filter" data-f="all" aria-pressed="${state.filter === "all"}">All <span class="muted">${all.length}</span></button>
-        ${kinds.map(k => `<button class="filter" data-f="${k}" aria-pressed="${state.filter === k}"><span class="dot ${k}"></span>${KIND_LABEL[k]} <span class="muted">${count(k)}</span></button>`).join("")}
-        ${marksDb ? `<button class="filter" data-f="marked" aria-pressed="${state.filter === "marked"}">Marked to discuss <span class="muted">${markedCount}</span></button>` : ""}
+      <div class="tabs" role="tablist" aria-label="Decisions">
+        ${tabs.map(t => `<button class="tab" role="tab" id="tab-${t.id}" data-tab="${t.id}" aria-controls="tabpanel" aria-selected="${t === tab}" tabindex="${t === tab ? 0 : -1}">${t.label} <span class="count">${t.items.length}</span></button>`).join("")}
       </div>
-      <div class="list">${shown.map(it => {
-        const e = it.head;
-        const changed = it.chain.length > 1;
-        const marked = marks.has(e.id);
-        return `
-        <details class="entry ${e.type}${marked ? " marked" : ""}" data-entry="${esc(e.id)}"${state.open.has(e.id) ? " open" : ""}>
-          <summary>
-            <div class="where"><span class="id">${it.num}</span>${e.area ? `<span class="area">${esc(e.area)}</span>` : ""}<span>${esc(e.where)}</span></div>
-            <dl class="qa">
-              ${e.type === "opportunity"
-                ? `<dt>Noticed</dt><dd>${esc(e.noticed)}</dd>`
-                : `<dt>Question</dt><dd>${esc(e.question)}</dd><dt>${e.type === "stop" ? "Your call" : "Decided"}</dt><dd class="decided">${esc(e.type === "stop" ? e.answer : e.decision)}</dd>`}
-            </dl>
-            <div class="chips">
-              <span class="chip ${e.type}">${KIND_LABEL[e.type]}</span>
-              ${e.trigger ? `<span class="chip">${esc(e.trigger)}</span>` : ""}
-              ${changed ? `<span class="chip history">Changed</span>` : ""}
-              ${marked ? `<span class="chip marked">Marked to discuss</span>` : ""}
-            </div>
-          </summary>
-          <div class="body">
-            <dl class="detail">${entryBody(e).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
-            ${marksDb ? `<div><button class="mark" data-mark="${esc(e.id)}" aria-pressed="${marked}">${marked ? "Marked to discuss" : "Mark to discuss"}</button></div>` : ""}
-            <div class="entry-links">
-              ${it.commits.map(c => `<a href="${esc(commitUrl(c))}">Commit <span class="mono">${short(c)}</span></a>`).join("")}
-              ${it.files.length ? `<span class="mono">${it.files.map(esc).join(", ")}</span>` : ""}
-              <span>${esc(e.author)}</span>
-            </div>
-          </div>
-        </details>`;
-      }).join("") || `<p class="muted">Nothing in this view.</p>`}</div>
+      <div class="group" role="tabpanel" id="tabpanel" aria-labelledby="tab-${tab.id}">
+        ${tab.note ? `<p class="note">${tab.note}</p>` : ""}
+        ${tab.items.length ? cards(tab.items) : `<p class="muted">${tab.empty}</p>`}
+      </div>
     </section>`;
 }
 
@@ -443,25 +520,9 @@ function renderBehaviour() {
     </section>`;
 }
 
-function renderCalibration() {
-  if (!(data.calibration || []).length) return "";
-  return `
-    <section aria-labelledby="cal-h">
-      <h2 id="cal-h">Calibration</h2>
-      <p class="note">Places where the flag rules and what happened didn't match. Each one may suggest a rule change.</p>
-      <div class="calib">${data.calibration.map(c => `
-        <div class="calib-item">
-          <div class="chips"><span class="chip">${esc(c.kind)}</span>${(c.targets || []).map(t => `<span class="chip">${esc(model.numById.get(t) || t)}</span>`).join("")}</div>
-          <p>${esc(c.explanation)}</p>
-          ${c.rule ? `<p class="note">Rule that applied: ${esc(c.rule)}</p>` : ""}
-          ${c.suggestion ? `<pre>${esc(c.suggestion)}</pre>` : ""}
-        </div>`).join("")}</div>
-    </section>`;
-}
-
 function render() {
   document.getElementById("app").innerHTML = [
-    renderHeader(), renderPlan(), renderMap(), renderFlows(), renderDecisions(), renderBehaviour(), renderCalibration(),
+    renderHeader(), renderPlan(), renderMap(), renderFlows(), renderDecisions(), renderBehaviour(),
   ].join("");
   renderPanel();
 }
@@ -470,16 +531,30 @@ document.getElementById("app").addEventListener("click", ev => {
   const node = ev.target.closest("button.node");
   if (node) { state.layer = state.layer === node.dataset.layer ? null : node.dataset.layer; render(); return; }
   const t = ev.target.closest(".toggle");
-  if (t) { const k = t.dataset.diff; state.diffs.has(k) ? state.diffs.delete(k) : state.diffs.add(k); renderPanel(); return; }
-  const f = ev.target.closest(".filter");
-  if (f) { state.filter = f.dataset.f; render(); return; }
+  if (t) {
+    const k = t.dataset.diff ?? t.dataset.ediff;
+    state.diffs.has(k) ? state.diffs.delete(k) : state.diffs.add(k);
+    t.dataset.diff !== undefined ? renderPanel() : render();
+    return;
+  }
+  const tab = ev.target.closest(".tab");
+  if (tab) { state.tab = tab.dataset.tab; render(); document.getElementById(`tab-${state.tab}`)?.focus(); return; }
   const m = ev.target.closest(".mark");
   if (m) toggleMark(m.dataset.mark, m);
 });
 
-// Remember which entries are open so a re-render doesn't collapse them.
+// Arrow keys move between the decision tabs.
+document.getElementById("app").addEventListener("keydown", ev => {
+  const tab = ev.target.closest?.(".tab");
+  if (!tab || !["ArrowLeft", "ArrowRight"].includes(ev.key)) return;
+  const all = [...document.querySelectorAll(".tab")];
+  const next = all[(all.indexOf(tab) + (ev.key === "ArrowRight" ? 1 : all.length - 1)) % all.length];
+  next.click();
+});
+
+// Remember which entries and sections are open so a re-render doesn't collapse them.
 document.getElementById("app").addEventListener("toggle", ev => {
-  const id = ev.target.dataset?.entry;
+  const id = ev.target.dataset?.entry || ev.target.dataset?.keep;
   if (!id) return;
   ev.target.open ? state.open.add(id) : state.open.delete(id);
 }, true);

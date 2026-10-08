@@ -2,7 +2,7 @@
 // Builds the mechanical parts of a your-call review.json from git and the
 // branch's decision log. From an existing review.json it keeps only the log
 // entries (merged by id) and the PR link. Judgment fields (title, summary,
-// layers, file why, flows, plan_vs_built, calibration) are left empty for the
+// layers, file why, flows, plan_vs_built, missed_stops) are left empty for the
 // generate skill to write fresh on every run, into a separate judgment file
 // that a second run merges in with --judgment.
 //
@@ -189,7 +189,7 @@ function fileCommits(repoDir, from, to, file) {
 
 /** Overlay the generate skill's judgment fields onto the review. Unknown file paths are reported, not added. */
 function applyJudgment(review, judgment) {
-  for (const key of ["title", "summary", "layers", "flows", "plan_vs_built", "calibration"]) {
+  for (const key of ["title", "summary", "layers", "flows", "plan_vs_built", "missed_stops"]) {
     if (judgment[key] !== undefined) review[key] = judgment[key];
   }
   const byPath = new Map(review.files.map(f => [f.path, f]));
@@ -280,7 +280,7 @@ function main() {
     files,
     flows: [],
     plan_vs_built: [],
-    calibration: [],
+    missed_stops: [],
   };
 
   if (args.judgment) applyJudgment(review, JSON.parse(readFileSync(args.judgment, "utf8")));

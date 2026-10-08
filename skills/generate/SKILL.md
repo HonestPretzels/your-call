@@ -74,7 +74,7 @@ Read the log entries and the diff (`git diff <base>...HEAD`), then write
   "files": { "path/to/file.ts": { "layer": "api", "why": "One sentence on why it changed" } },
   "flows": [{ "name": "…", "before": ["step"], "after": [{ "label": "step", "new": true }] }],
   "plan_vs_built": [{ "planned": "…", "built": "…", "status": "changed", "settled_by": ["entry id"], "note": "optional" }],
-  "calibration": [{ "kind": "Missed stop", "targets": ["entry id"], "rule": "Trigger that applied", "explanation": "…", "suggestion": null }]
+  "missed_stops": [{ "entry": "entry id", "trigger": "The stop trigger it matched, and why, in one sentence" }]
 }
 ```
 
@@ -86,13 +86,18 @@ Read the log entries and the diff (`git diff <base>...HEAD`), then write
 - **files:** give every changed file a layer and a `why`.
 - **flows:** only for a user or data flow the branch changed. Leave empty
   otherwise.
-- **plan_vs_built:** compare the latest `plan` entry with the diff. Status is
-  `as-planned`, `changed`, `added`, or `dropped`. `settled_by` names the stop
-  or decision entries that settled it. Leave empty when there's no plan.
-- **calibration:** places where the flag rule and what happened don't match:
-  a logged decision that matched a stop trigger, something in the diff with
-  no entry that should have one, or a stop that the plan had already
-  settled. Leave empty when everything lines up.
+- **plan_vs_built:** compare the latest `plan` entry with the diff, with one
+  row per scope statement and a row for anything built that the plan didn't
+  cover. Status is `as-planned`, `changed`, `added`, or `dropped`. `built`
+  says in a few words what was built. For rows that aren't `as-planned`,
+  `note` is one plain sentence on how the change came about, with no entry
+  ids in it. `settled_by` names the stop or decision entries that settled
+  it. Leave empty when there's no plan.
+- **missed_stops:** logged decisions that matched a stop trigger and should
+  have been asked. The page puts them first in its To review list.
+  Something in the diff with no entry at all goes in `plan_vs_built` as
+  `added`, with a note saying it wasn't logged. Leave empty when nothing was
+  missed.
 
 Then build the final files:
 
