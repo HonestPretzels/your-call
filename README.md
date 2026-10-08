@@ -22,16 +22,6 @@ Most of an agent's judgment calls are cheap and easy to undo. A few are expensiv
 
 your-call doesn't replace code review. The PR, its diff and your reviewers are all still there. The review page sits next to them and adds what a diff can't show: what was decided, by whom, and why.
 
-### Background
-
-Alongside my own experience, the design draws on [*The Work Behind Delegation: A Framework for Supervising AI Coding Agents*](https://arxiv.org/abs/2609.24234) (Park, Arvi, Lee, Lim, Ma and Kim, 2026, preprint). Based on 19 experienced developers, the paper models supervising a coding agent as seven stages: Plan, Monitor, Wait, Review, Teach, Manual Fix and Update Assets. It also models the loops between them. your-call maps onto those stages:
-
-- **Plan.** The developers in the study put heavy effort into planning to reduce supervision later: stating non-goals, deciding what could change, and defining when work was done. your-call's plan and skeleton step formalizes that.
-- **Monitor and Wait.** Instead of watching the agent work, you wait until it reaches a decision that's yours. Stops bring you back at those points.
-- **Review.** The study found review was the stage developers discussed most. They checked the work against intent and for unplanned scope, not just whether it ran. The review page starts from the decisions and the plan, so you can check exactly that.
-- **Teach.** `/your-call:review` is where you send corrections back, and they go through the same stop-or-log process.
-- **Update Assets.** The developers turned recurring guidance into reusable files such as agent rules. The your-call rule is one of those files, and you can tune it.
-
 ## How it works
 
 ### 1. Before code: plan and shape
@@ -143,6 +133,10 @@ A `.your-call.json` at a repo's root can override the defaults:
 
 - Decision logs: `~/.claude/your-call/logs/<repo>/<branch>.jsonl`, outside your repo. A log is deleted once its branch is merged or gone and it's two weeks stale. The review page keeps the record.
 - Review pages: private claude.ai artifacts. Share one from its Share menu so reviewers can open it.
+
+## Background
+
+The design draws on my own experience and on [*The Work Behind Delegation: A Framework for Supervising AI Coding Agents*](https://arxiv.org/abs/2609.24234) (Park, Arvi, Lee, Lim, Ma and Kim, 2026).
 
 ## License
 
