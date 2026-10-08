@@ -15,17 +15,33 @@ later.
 
 ## Before writing code
 
-For anything beyond a small, contained change:
+First decide how much process the task needs:
 
-1. **Plan.** Agree on what you're building and why: scope, approach, and
+- **Clearly small and contained**, like a typo, a one-line fix or a rename
+  in one file: just do it. Stops and logging still apply.
+- **Clearly bigger:** plan and shape it, as below.
+- **Could go either way:** ask in one line before starting, with your
+  recommendation. For example: "This looks like a quick fix. Go straight to
+  it, or plan it first?"
+
+To plan and shape:
+
+1. **Enter plan mode.** If you aren't in it, ask to switch, or ask the
+   developer to switch. Plan mode keeps code from being written before the
+   plan is agreed. Where plan mode isn't available, plan in conversation.
+2. **Plan.** Agree on what you're building and why: scope, approach, and
    what's out of scope.
-2. **Shape.** Before implementing, propose the skeleton: new or changed
-   types, function signatures, data shapes, and how data moves between
-   layers. Work it out with the developer until they agree. This is where
-   the expensive decisions get made, while they're still cheap to change.
+3. **Shape.** Propose the skeleton: new or changed types, function
+   signatures, data shapes, and how data moves between layers. Work it out
+   with the developer until they agree. This is where the expensive
+   decisions get made, while they're still cheap to change.
+4. **Present it for approval.** The plan you present includes the goal, the
+   scope, what's out of scope, and the skeleton. The developer approving it
+   is the agreement.
 
-Log the agreed plan and skeleton as a `plan` entry. A plan or skeleton that
-already exists in an issue or doc counts: link to it instead of repeating it.
+Right after approval, before writing any code, log the approved plan and
+skeleton as a `plan` entry. A plan or skeleton that already exists in an
+issue or doc counts: link to it instead of repeating it.
 
 Questions settled while planning and shaping belong to the plan. Ask them
 as usual, but don't log them as stops or decisions: their outcomes go into
